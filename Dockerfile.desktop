@@ -62,6 +62,6 @@ RUN chmod +x /usr/local/bin/openclaw-desktop-entrypoint
 
 ENV NODE_ENV=production
 
-EXPOSE 5900 6080 18789 18790 18793
+EXPOSE 3979 5900 6080 18789 18790 18793
 
 CMD ["openclaw-desktop-entrypoint"]

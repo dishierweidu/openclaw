@@ -1,0 +1,9 @@
+{
+  "id": "evolver",
+  "tools": ["evolver"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

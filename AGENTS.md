@@ -176,3 +176,9 @@
 - Publish: `npm publish --access public --otp="<otp>"` (run from the package dir).
 - Verify without local npmrc side effects: `npm view <pkg> version --userconfig "$(mktemp)"`.
 - Kill the tmux session after publish.
+
+
+项目用sudo docker化部署，需要让docker访问GPU，所以整个过程中需要使用sudo。
+sudo的密码是： root@233
+每次完成编辑操作后，请务必确认是否需要更新docker镜像和容器，如果需要，请执行
+部署之后，openclaw在http://localhost:18789/ 访问，VNC在http://localhost:6080/vnc.html 访问。VNC的目的是方便查看openclaw当前进行的操作情况。

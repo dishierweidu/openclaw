@@ -9,6 +9,12 @@
           - "src/discord/**"
           - "extensions/discord/**"
           - "docs/channels/discord.md"
+"channel: feishu":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/feishu/**"
+          - "src/config/types.feishu.ts"
+          - "docs/channels/feishu.md"
 "channel: googlechat":
   - changed-files:
       - any-glob-to-any-file:
@@ -93,6 +99,12 @@
       - any-glob-to-any-file:
           - "extensions/zalouser/**"
           - "docs/channels/zalouser.md"
+
+"extension: evolver":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/evolver/**"
+          - "docs/extensions/evolver.md"
 
 "app: android":
   - changed-files:

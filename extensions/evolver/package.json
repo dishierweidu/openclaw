@@ -1,0 +1,24 @@
+{
+  "name": "@openclaw/evolver",
+  "version": "2026.1.30",
+  "description": "OpenClaw Evolver - GEP Protocol self-improvement capabilities",
+  "type": "module",
+  "devDependencies": {
+    "openclaw": "workspace:*"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "tool": {
+      "id": "evolver",
+      "name": "Evolver",
+      "description": "Self-improvement capabilities via GEP Protocol"
+    },
+    "install": {
+      "npmSpec": "@openclaw/evolver",
+      "localPath": "extensions/evolver",
+      "defaultChoice": "npm"
+    }
+  }
+}
