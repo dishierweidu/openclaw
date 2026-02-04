@@ -1,0 +1,61 @@
+# GPU-enabled Docker Compose overlay for OpenClaw
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+#
+# Prerequisites:
+#   - NVIDIA Container Toolkit installed on host
+#   - nvidia as default runtime (--default-runtime=nvidia)
+#   - GPU drivers installed and working (nvidia-smi)
+
+services:
+  openclaw-gateway:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    ports:
+      - "${OPENCLAW_CANVAS_PORT:-18793}:18793"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  openclaw-cli:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  openclaw-sandbox-browser:
+    image: ${OPENCLAW_SANDBOX_BROWSER_IMAGE:-openclaw-sandbox-browser:local}
+    environment:
+      OPENCLAW_BROWSER_CDP_PORT: ${OPENCLAW_BROWSER_CDP_PORT:-9222}
+      OPENCLAW_BROWSER_VNC_PORT: ${OPENCLAW_BROWSER_VNC_PORT:-5900}
+      OPENCLAW_BROWSER_NOVNC_PORT: ${OPENCLAW_BROWSER_NOVNC_PORT:-6080}
+      OPENCLAW_BROWSER_ENABLE_NOVNC: ${OPENCLAW_BROWSER_ENABLE_NOVNC:-1}
+      OPENCLAW_BROWSER_HEADLESS: ${OPENCLAW_BROWSER_HEADLESS:-0}
+    ports:
+      - "${OPENCLAW_BROWSER_CDP_PORT:-9222}:9222"
+      - "${OPENCLAW_BROWSER_VNC_PORT:-5900}:5900"
+      - "${OPENCLAW_BROWSER_NOVNC_PORT:-6080}:6080"
+    shm_size: "2gb"
+    init: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

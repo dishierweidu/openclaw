@@ -1,6 +1,8 @@
 services:
   openclaw-gateway:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
+    # Dynamic user mapping to match host UID/GID for file permissions
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -8,12 +10,22 @@ services:
       CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY}
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
+      # Canvas host configuration
+      OPENCLAW_CANVAS_PORT: ${OPENCLAW_CANVAS_PORT:-18793}
+      # Sandbox browser CDP host (for connecting to sandbox-browser service)
+      OPENCLAW_BROWSER_CDP_HOST: ${OPENCLAW_BROWSER_CDP_HOST:-}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
+      # Host filesystem read-only access (access via /host-root/...)
+      - ${OPENCLAW_HOST_ROOT:-/}:/host-root:ro
+      # Project folder read-write access
+      - ${OPENCLAW_PROJECT_DIR:-.}:/project:rw
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+      # Canvas Host for A2UI visualization
+      - "${OPENCLAW_CANVAS_PORT:-18793}:18793"
     init: true
     restart: unless-stopped
     command:
@@ -25,10 +37,12 @@ services:
         "${OPENCLAW_GATEWAY_BIND:-lan}",
         "--port",
         "${OPENCLAW_GATEWAY_PORT:-18789}",
+        "--allow-unconfigured",
       ]
 
   openclaw-cli:
     image: ${OPENCLAW_IMAGE:-openclaw:local}
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -37,9 +51,37 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
+      # Host filesystem read-only access
+      - ${OPENCLAW_HOST_ROOT:-/}:/host-root:ro
+      # Project folder read-write access
+      - ${OPENCLAW_PROJECT_DIR:-.}:/project:rw
     stdin_open: true
     tty: true
     init: true
     entrypoint: ["node", "dist/index.js"]
+
+  # Sandbox browser service for visual agent operations
+  # Access noVNC at http://localhost:6080 to see browser visually
+  openclaw-sandbox-browser:
+    image: ${OPENCLAW_SANDBOX_BROWSER_IMAGE:-openclaw-sandbox-browser:local}
+    profiles:
+      - browser
+      - gui
+    environment:
+      OPENCLAW_BROWSER_CDP_PORT: ${OPENCLAW_BROWSER_CDP_PORT:-9222}
+      OPENCLAW_BROWSER_VNC_PORT: ${OPENCLAW_BROWSER_VNC_PORT:-5900}
+      OPENCLAW_BROWSER_NOVNC_PORT: ${OPENCLAW_BROWSER_NOVNC_PORT:-6080}
+      OPENCLAW_BROWSER_ENABLE_NOVNC: ${OPENCLAW_BROWSER_ENABLE_NOVNC:-1}
+      OPENCLAW_BROWSER_HEADLESS: ${OPENCLAW_BROWSER_HEADLESS:-0}
+    ports:
+      # Chrome DevTools Protocol
+      - "${OPENCLAW_BROWSER_CDP_PORT:-9222}:9222"
+      # VNC direct access
+      - "${OPENCLAW_BROWSER_VNC_PORT:-5900}:5900"
+      # noVNC web interface
+      - "${OPENCLAW_BROWSER_NOVNC_PORT:-6080}:6080"
+    shm_size: "2gb"
+    init: true
+    restart: unless-stopped

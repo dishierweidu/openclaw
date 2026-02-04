@@ -1,0 +1,15 @@
+# GPU overlay for the desktop service
+# Usage: docker compose -f docker-compose.yml -f docker-compose.desktop.yml -f docker-compose.gpu.desktop.yml up -d openclaw-desktop
+
+services:
+  openclaw-desktop:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all

@@ -1,0 +1,52 @@
+# Full GUI Desktop overlay for OpenClaw
+# Usage: docker compose -f docker-compose.yml -f docker-compose.desktop.yml up -d openclaw-desktop
+# With GPU: docker compose -f docker-compose.yml -f docker-compose.desktop.yml -f docker-compose.gpu.desktop.yml up -d openclaw-desktop
+#
+# Access the desktop at http://localhost:6080/vnc.html
+
+services:
+  openclaw-desktop:
+    build:
+      context: .
+      dockerfile: Dockerfile.desktop
+      args:
+        OPENCLAW_DOCKER_APT_PACKAGES: ${OPENCLAW_DOCKER_APT_PACKAGES:-}
+    image: ${OPENCLAW_DESKTOP_IMAGE:-openclaw-desktop:local}
+    # Use bridge network with port mapping (host mode has namespace issues with init/privileged)
+    ports:
+      - "${OPENCLAW_BROWSER_VNC_PORT:-5900}:5900"
+      - "${OPENCLAW_BROWSER_NOVNC_PORT:-6080}:6080"
+    # Allow access to host network services from within the container
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DISPLAY: ":1"
+      OPENCLAW_DESKTOP_RESOLUTION: ${OPENCLAW_DESKTOP_RESOLUTION:-1920x1080x24}
+      OPENCLAW_BROWSER_VNC_PORT: ${OPENCLAW_BROWSER_VNC_PORT:-5900}
+      OPENCLAW_BROWSER_NOVNC_PORT: ${OPENCLAW_BROWSER_NOVNC_PORT:-6080}
+      OPENCLAW_BROWSER_ENABLE_NOVNC: ${OPENCLAW_BROWSER_ENABLE_NOVNC:-1}
+      OPENCLAW_START_GATEWAY: ${OPENCLAW_START_GATEWAY:-0}
+      OPENCLAW_GATEWAY_BIND: ${OPENCLAW_GATEWAY_BIND:-lan}
+      OPENCLAW_GATEWAY_PORT: ${OPENCLAW_GATEWAY_PORT:-18789}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_CANVAS_PORT: ${OPENCLAW_CANVAS_PORT:-18793}
+    volumes:
+      # OpenClaw config (persistent)
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/root/.openclaw
+      # Workspace
+      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/root/.openclaw/workspace
+      # Host filesystem — read-only
+      - ${OPENCLAW_HOST_ROOT:-/}:/host-root:ro
+      # Project directory — read-write
+      - ${OPENCLAW_PROJECT_DIR:-.}:/project:rw
+    # Shared memory for Chromium and GUI rendering
+    shm_size: "2gb"
+    init: true
+    restart: unless-stopped
+    # Disable AppArmor to allow D-Bus and xfconf to work
+    security_opt:
+      - apparmor:unconfined
+    # DNS: use host DNS so container can resolve local hostnames
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
